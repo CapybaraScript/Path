@@ -6,10 +6,10 @@ local Players = game:GetService("Players")
 function Path.createPath(character, destination, settings)
     local path = PathfindingService:CreatePath(settings or {
         AgentRadius = 2,
-        AgentHeight = 5,
+        AgentHeight = 3,
         AgentCanJump = true,
-        AgentJumpHeight = 7,
-        AgentMaxSlope = 45
+        AgentJumpHeight = 13,
+        AgentMaxSlope = 55
     })
 
     local startPart = character:FindFirstChild("HumanoidRootPart")
