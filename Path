@@ -1,5 +1,5 @@
 local Path = {}
-print("$$")
+Print("$$$$$$")
 local PathfindingService = game:GetService("PathfindingService")
 local Players = game:GetService("Players")
 
@@ -31,7 +31,7 @@ function Path.createPath(character, destination, settings)
 end
 
 function Path.followPath(character, path)
-    if path.Status ~= Enum.PathStatus.Success then
+    if path.Status ~= Enum.PathStatus.Complete then
         warn("El camino no se calculó correctamente. Estado: " .. tostring(path.Status))
         return false
     end
@@ -43,15 +43,49 @@ function Path.followPath(character, path)
         warn("No se encontró Humanoid en el character!")
         return false 
     end
-    
+
+    local lastPosition = character.HumanoidRootPart.Position
+    local timeStuck = 0
+    local stuckThreshold = 3  -- 3 segundos sin movimiento
+
+    local function isObstacleInPath()
+        local ray = Ray.new(character.HumanoidRootPart.Position, character.HumanoidRootPart.CFrame.LookVector * 5)
+        local hitPart, hitPosition = game.Workspace:FindPartOnRay(ray, character)
+        return hitPart ~= nil
+    end
+
     for _, waypoint in ipairs(waypoints) do
+        -- Verificar si el personaje está atrapado
+        if (character.HumanoidRootPart.Position - lastPosition).Magnitude < 0.1 then
+            timeStuck = timeStuck + 1
+        else
+            timeStuck = 0  -- Reiniciar el contador si se mueve
+        end
+
+        if timeStuck >= stuckThreshold then
+            print("Jugador atrapado, saltando...")
+            humanoid.Jump = true  -- Hacer que salte
+            timeStuck = 0  -- Reiniciar el temporizador
+        end
+
+        -- Si hay un obstáculo en el camino, recalcular el camino
+        if isObstacleInPath() then
+            print("Obstáculo detectado, recalculando el camino...")
+            return false
+        end
+        
+        -- Mover al siguiente waypoint
         if waypoint.Action == Enum.PathWaypointAction.Jump then
             humanoid.Jump = true
         end
+        
         humanoid:MoveTo(waypoint.Position)
         humanoid.MoveToFinished:Wait()
+
+        -- Actualizar la última posición
+        lastPosition = character.HumanoidRootPart.Position
     end
-    
+
     return true
 end
 
