@@ -1,8 +1,8 @@
-local Pathfinder = {}
+local Path = {}
 local PathfindingService = game:GetService("PathfindingService")
 local Players = game:GetService("Players")
 
-function Pathfinder.createPath(agent, destination, settings)
+function Path.createPath(character, destination, settings)
     local path = PathfindingService:CreatePath(settings or {
         AgentRadius = 2,
         AgentHeight = 5,
@@ -11,35 +11,39 @@ function Pathfinder.createPath(agent, destination, settings)
         AgentMaxSlope = 45
     })
 
-    path:ComputeAsync(agent.Position, destination)
+    path:ComputeAsync(character.PrimaryPart.Position, destination)
     return path
 end
 
-function Pathfinder.followPath(agent, path)
+function Path.followPath(character, path)
     if path.Status ~= Enum.PathStatus.Success then return false end
     local waypoints = path:GetWaypoints()
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    
+    if not humanoid then return false end
     
     for _, waypoint in ipairs(waypoints) do
         if waypoint.Action == Enum.PathWaypointAction.Jump then
-            agent.Humanoid.Jump = true
+            humanoid.Jump = true
         end
-        agent.Humanoid:MoveTo(waypoint.Position)
-        agent.Humanoid.MoveToFinished:Wait()
+        humanoid:MoveTo(waypoint.Position)
+        humanoid.MoveToFinished:Wait()
     end
     
     return true
 end
 
-function Pathfinder.getNearestPlayer(targetPlayer)
+function Path.getNearestPlayer(localPlayer)
     local nearestPlayer = nil
     local shortestDistance = math.huge
-    local targetPosition = targetPlayer.Character and targetPlayer.Character:GetPivot().Position
+    local localCharacter = localPlayer.Character
+    if not localCharacter or not localCharacter.PrimaryPart then return nil end
 
-    if not targetPosition then return nil end
+    local localPosition = localCharacter.PrimaryPart.Position
 
     for _, player in pairs(Players:GetPlayers()) do
-        if player ~= targetPlayer and player.Character and player.Character.PrimaryPart then
-            local distance = (player.Character.PrimaryPart.Position - targetPosition).Magnitude
+        if player ~= localPlayer and player.Character and player.Character.PrimaryPart then
+            local distance = (player.Character.PrimaryPart.Position - localPosition).Magnitude
             if distance < shortestDistance then
                 shortestDistance = distance
                 nearestPlayer = player
@@ -50,4 +54,4 @@ function Pathfinder.getNearestPlayer(targetPlayer)
     return nearestPlayer
 end
 
-return Pathfinder
+return Path
