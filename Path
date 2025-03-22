@@ -1,4 +1,5 @@
 local Path = {}
+print("$$")
 local PathfindingService = game:GetService("PathfindingService")
 local Players = game:GetService("Players")
 
@@ -11,20 +12,18 @@ function Path.createPath(character, destination, settings)
         AgentMaxSlope = 45
     })
 
-    -- Asegurándonos de que usamos HumanoidRootPart y no PrimaryPart
-    local startPosition = character:FindFirstChild("HumanoidRootPart")
-    if not startPosition then
-        warn("No HumanoidRootPart found for character!")
+    local startPart = character:FindFirstChild("HumanoidRootPart")
+    if not startPart then
+        warn("No se encontró el HumanoidRootPart en el character!")
         return nil
     end
 
-    -- Intentar calcular el path con pcall para manejar errores
     local success, err = pcall(function()
-        path:ComputeAsync(startPosition.Position, destination)
+        path:ComputeAsync(startPart.Position, destination)
     end)
-
+    
     if not success then
-        warn("Error al calcular el path: " .. err)
+        warn("Error al calcular el camino: " .. err)
         return nil
     end
     
@@ -32,14 +31,18 @@ function Path.createPath(character, destination, settings)
 end
 
 function Path.followPath(character, path)
-    if path.Status ~= Enum.PathStatus.Complete then
-        warn("Path no completado correctamente.")
+    if path.Status ~= Enum.PathStatus.Success then
+        warn("El camino no se calculó correctamente. Estado: " .. tostring(path.Status))
         return false
     end
+
     local waypoints = path:GetWaypoints()
     local humanoid = character:FindFirstChildOfClass("Humanoid")
     
-    if not humanoid then return false end
+    if not humanoid then 
+        warn("No se encontró Humanoid en el character!")
+        return false 
+    end
     
     for _, waypoint in ipairs(waypoints) do
         if waypoint.Action == Enum.PathWaypointAction.Jump then
