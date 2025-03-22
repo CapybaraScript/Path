@@ -1,0 +1,53 @@
+local Pathfinder = {}
+local PathfindingService = game:GetService("PathfindingService")
+local Players = game:GetService("Players")
+
+function Pathfinder.createPath(agent, destination, settings)
+    local path = PathfindingService:CreatePath(settings or {
+        AgentRadius = 2,
+        AgentHeight = 5,
+        AgentCanJump = true,
+        AgentJumpHeight = 7,
+        AgentMaxSlope = 45
+    })
+
+    path:ComputeAsync(agent.Position, destination)
+    return path
+end
+
+function Pathfinder.followPath(agent, path)
+    if path.Status ~= Enum.PathStatus.Success then return false end
+    local waypoints = path:GetWaypoints()
+    
+    for _, waypoint in ipairs(waypoints) do
+        if waypoint.Action == Enum.PathWaypointAction.Jump then
+            agent.Humanoid.Jump = true
+        end
+        agent.Humanoid:MoveTo(waypoint.Position)
+        agent.Humanoid.MoveToFinished:Wait()
+    end
+    
+    return true
+end
+
+function Pathfinder.getNearestPlayer(targetPlayer)
+    local nearestPlayer = nil
+    local shortestDistance = math.huge
+    local targetPosition = targetPlayer.Character and targetPlayer.Character:GetPivot().Position
+
+    if not targetPosition then return nil end
+
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= targetPlayer and player.Character and player.Character.PrimaryPart then
+            local distance = (player.Character.PrimaryPart.Position - targetPosition).Magnitude
+            if distance < shortestDistance then
+                shortestDistance = distance
+                nearestPlayer = player
+            end
+        end
+    end
+
+    return nearestPlayer
+end
+
+return Pathfinder
